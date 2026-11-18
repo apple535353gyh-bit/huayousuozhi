@@ -1,0 +1,6 @@
+export const clamp=v=>Math.max(0,Math.min(1,v));
+export function pose(kind,p){p=clamp(p);return kind==='left'?{x:416+274*p,y:804-254*p,angle:100*p,scale:.74}:{x:1080-365*p,y:770-200*p,angle:-92*p,scale:.65};}
+export function progress(hand,x){return clamp(hand==='left'?(x-.18)/.5:(.82-x)/.5);}
+// The model receives unmirrored video; swap its selfie-oriented labels.
+export function candidates(results){return (results.multiHandLandmarks||[]).map((lm,i)=>{const h=results.multiHandedness?.[i];return {x:1-[0,5,9,13,17].reduce((s,k)=>s+lm[k].x,0)/5,y:[0,5,9,13,17].reduce((s,k)=>s+lm[k].y,0)/5,hand:h?.label==='Right'?'left':'right',score:h?.score||0};}).filter(h=>h.score>=.65);}
+export function assignHands(hands,tracks,now){const available=hands.slice(0,2);const cost=(h,side)=>{const t=tracks[side];const distance=t.point&&now-t.seen<700?Math.hypot(h.x-t.point.x,h.y-t.point.y):0;return distance+(h.hand===side?0:1.5);};let best={cost:Infinity,left:null,right:null};for(let l=-1;l<available.length;l++)for(let r=-1;r<available.length;r++){if(l===r&&l!==-1)continue;if((l>=0)+(r>=0)!==available.length)continue;const c=(l>=0?cost(available[l],'left'):0)+(r>=0?cost(available[r],'right'):0);if(c<best.cost)best={cost:c,left:available[l]||null,right:available[r]||null};}return best;}
